@@ -1,0 +1,12 @@
+{
+  "coverage": "100%",
+  "expectCount": 16,
+  "actualCount": 16,
+  "files": {
+    "remote-device-logger/index.js": {
+      "expectCount": 16,
+      "actualCount": 16,
+      "undocumentLines": []
+    }
+  }
+}

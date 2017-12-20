@@ -1,0 +1,420 @@
+[
+  {
+    "__docId__": 0,
+    "kind": "file",
+    "name": "remote-device-logger/index.js",
+    "content": "// @flow\n\n/*::\nexport type RemoteDeviceLoggerParams = {\n  debug?: boolean;\n  stdout?: boolean;\n  element?: HTMLElement;\n  webSocketUrl?: string;\n  display?: boolean;\n};\n*/\n\n/**\n * Create a logger\n * @example\n * const logger = new RemoteDeviceLogger();\n * logger.log('Log A', 'Log B');\n */\nexport default class RemoteDeviceLogger {\n  /*::\n  _logPool: string[];\n  _stdout: boolean;\n  _element: HTMLElement;\n  _connection: WebSocket;\n  */\n\n  /**\n   * @param {Object} params\n   * @param {boolean} [params.debug=true] debug\n   * @param {boolean} [params.stdout=true] stdout\n   * @param {HTMLElement} [params.element] element \n   * @param {string} [params.webSocketUrl] webSocketUrl\n   * @param {boolean} [params.display] display\n   */\n  constructor({\n    debug = true,\n    stdout = true,\n    element,\n    webSocketUrl,\n    display,\n  }/*: RemoteDeviceLoggerParams*/ = {}) {\n    /**\n     * The condition if print a log message to the standard output\n     * @private\n     * @type {boolean}\n     */\n    this._stdout = stdout;\n    if (debug) {\n      /**\n       * The pool area to store log messages\n       * @private\n       * @type {Array}\n       */\n      this._logPool = [];\n      this._catchAllErrors();\n      if (typeof WebSocket === 'function' && webSocketUrl) {\n        this._connectWebSocket(webSocketUrl);\n      }\n      if (element) {\n        this._createElement(element, display);\n      }\n    }\n  }\n\n  /**\n   * Connect to a WebSocket server where you want to send a log\n   * @private\n   * @param {string} url The URL of a WebSocket server \n   */\n  _connectWebSocket(url/*: string*/) {\n    const connection = new WebSocket(url);\n  \n    connection.onopen = () => {\n      const mes = 'WebSocket opened';\n      this.print(mes);\n      if (!this._logPool) return;\n      this.sendLog(this._logPool);\n      this.sendLog([mes]);\n      this._logPool.unshift(mes);  \n      this.writeToElement(this._logPool);\n    };\n\n    connection.onerror = () => {\n      this.log('WebSocket error');\n    };\n    \n    connection.onmessage = e => {\n      this.log('WebSocket message:', e.data);\n    };\n\n    connection.onclose = e => {\n      this.log('WebSocket closed');\n    };\n\n    /**\n     * The WebSocket connection\n     * @private\n     * @type {Object}\n     */\n    this._connection = connection;\n  }\n\n  /**\n   * Create an element node to contain logs for display\n   * @private\n   * @param {HTMLElement} parentElement The parent element of the log node \n   * @param {boolean} display The initial state of the logs' appearance \n   */\n  _createElement(parentElement/*: HTMLElement*/, display/*: boolean*/ = true) {\n    const element = document.createElement('p');\n    element.style.position = 'absolute';\n    element.style.top = '0';\n    element.style.left = '0';\n    element.style.width = '50%';\n    element.style.height = '100%';\n    element.style.backgroundColor = 'rgba(0,0,0,.8)';\n    element.style.color = 'white';\n    element.style.wordWrap = 'break-word';\n    element.style.padding = '1em';\n    element.style.lineHeight = '1.4em';\n\n    /**\n     * The log container element\n     * @private\n     * @type {HTMLElement}\n     */\n    this._element = element;\n\n    if (!display) this.hide();\n    this.writeToElement(this._logPool);\n    parentElement.appendChild(element);\n  }\n\n  /**\n   * Add an event lister to window to catch all errors happening on the browser\n   * @private\n   */\n  _catchAllErrors() {\n    if (typeof window === 'undefined') return;\n    window.onerror = (message, fileName, lineNumber, columnNumber) => {\n      var errorInfo = {\n        message,\n        fileName,\n        lineNumber,\n        columnNumber,\n        location: location.href,\n        userAgent: navigator.userAgent\n      };\n      this.log(JSON.stringify(errorInfo));\n    };\n  }\n\n  /**\n   * Log messages\n   * @param {...any} messages Log messages\n   */\n  log(...messages/*: any[]*/) {\n    this.print(...messages);\n    if (!this._logPool) return;\n\n    const mes = messages.join(' ');\n    this._logPool.unshift(mes);  \n\n    this.writeToElement(this._logPool);\n    this.sendLog([mes]);\n  }\n\n  /**\n   * Print messages\n   * @param {...any} messages Messages to print\n   */\n  print(...messages/*: any[]*/) {\n    if (!this._stdout) return;\n    console.log(...messages);\n  }\n\n  /**\n   * Send log messages\n   * @param {string[]} messages Messages to send\n   */\n  sendLog(messages/*: string[]*/) {\n    if (!this._connection || this._connection.readyState !== WebSocket.OPEN) {\n      return;\n    }\n    this._connection.send(messages.join(' '));\n  }\n\n  /**\n   * Write log messages to the log container element\n   * @param {string[]} messages Messages to write\n   */\n  writeToElement(messages/*: string[]*/) {\n    if (!this._element) return;\n    this._element.innerHTML = messages.join('<br />');\n  }\n\n  /**\n   * Toggle the log container element\n   */\n  toggle() {\n    if (!this._element) return;\n    if (this._element.style.display === 'none') {\n      this.show();\n    } else {\n      this.hide();\n    }\n  }\n\n  /**\n   * Show the log container element\n   */\n  show() {\n    if (!this._element) return;\n    this._element.style.display = '';\n    this._element.style.visibility = '';\n  }\n\n  /**\n   * Hide the log container element\n   */\n  hide() {\n    if (!this._element) return;\n    this._element.style.display = 'none';\n    this._element.style.visibility = 'hidden';\n  }\n}\n",
+    "static": true,
+    "longname": "/Users/a12915/workspace/remote-device-logger/index.js",
+    "access": "public",
+    "description": null,
+    "lineNumber": 1
+  },
+  {
+    "__docId__": 1,
+    "kind": "class",
+    "name": "RemoteDeviceLogger",
+    "memberof": "remote-device-logger/index.js",
+    "static": true,
+    "longname": "remote-device-logger/index.js~RemoteDeviceLogger",
+    "access": "public",
+    "export": true,
+    "importPath": "remote-device-logger/remote-device-logger/index.js",
+    "importStyle": "RemoteDeviceLogger",
+    "description": "Create a logger",
+    "examples": [
+      "const logger = new RemoteDeviceLogger();\nlogger.log('Log A', 'Log B');"
+    ],
+    "lineNumber": 19,
+    "interface": false
+  },
+  {
+    "__docId__": 2,
+    "kind": "constructor",
+    "name": "constructor",
+    "memberof": "remote-device-logger/index.js~RemoteDeviceLogger",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "remote-device-logger/index.js~RemoteDeviceLogger#constructor",
+    "access": "public",
+    "description": "",
+    "lineNumber": 35,
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "Object"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "params",
+        "description": ""
+      },
+      {
+        "nullable": null,
+        "types": [
+          "boolean"
+        ],
+        "spread": false,
+        "optional": true,
+        "defaultValue": "true",
+        "defaultRaw": true,
+        "name": "params.debug",
+        "description": "debug"
+      },
+      {
+        "nullable": null,
+        "types": [
+          "boolean"
+        ],
+        "spread": false,
+        "optional": true,
+        "defaultValue": "true",
+        "defaultRaw": true,
+        "name": "params.stdout",
+        "description": "stdout"
+      },
+      {
+        "nullable": null,
+        "types": [
+          "HTMLElement"
+        ],
+        "spread": false,
+        "optional": true,
+        "name": "params.element",
+        "description": "element"
+      },
+      {
+        "nullable": null,
+        "types": [
+          "string"
+        ],
+        "spread": false,
+        "optional": true,
+        "name": "params.webSocketUrl",
+        "description": "webSocketUrl"
+      },
+      {
+        "nullable": null,
+        "types": [
+          "boolean"
+        ],
+        "spread": false,
+        "optional": true,
+        "name": "params.display",
+        "description": "display"
+      }
+    ]
+  },
+  {
+    "__docId__": 3,
+    "kind": "member",
+    "name": "_stdout",
+    "memberof": "remote-device-logger/index.js~RemoteDeviceLogger",
+    "static": false,
+    "longname": "remote-device-logger/index.js~RemoteDeviceLogger#_stdout",
+    "access": "private",
+    "description": "The condition if print a log message to the standard output",
+    "lineNumber": 47,
+    "type": {
+      "nullable": null,
+      "types": [
+        "boolean"
+      ],
+      "spread": false,
+      "description": null
+    }
+  },
+  {
+    "__docId__": 4,
+    "kind": "member",
+    "name": "_logPool",
+    "memberof": "remote-device-logger/index.js~RemoteDeviceLogger",
+    "static": false,
+    "longname": "remote-device-logger/index.js~RemoteDeviceLogger#_logPool",
+    "access": "private",
+    "description": "The pool area to store log messages",
+    "lineNumber": 54,
+    "type": {
+      "nullable": null,
+      "types": [
+        "Array"
+      ],
+      "spread": false,
+      "description": null
+    }
+  },
+  {
+    "__docId__": 5,
+    "kind": "method",
+    "name": "_connectWebSocket",
+    "memberof": "remote-device-logger/index.js~RemoteDeviceLogger",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "remote-device-logger/index.js~RemoteDeviceLogger#_connectWebSocket",
+    "access": "private",
+    "description": "Connect to a WebSocket server where you want to send a log",
+    "lineNumber": 70,
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "string"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "url",
+        "description": "The URL of a WebSocket server"
+      }
+    ],
+    "return": null
+  },
+  {
+    "__docId__": 6,
+    "kind": "member",
+    "name": "_connection",
+    "memberof": "remote-device-logger/index.js~RemoteDeviceLogger",
+    "static": false,
+    "longname": "remote-device-logger/index.js~RemoteDeviceLogger#_connection",
+    "access": "private",
+    "description": "The WebSocket connection",
+    "lineNumber": 100,
+    "type": {
+      "nullable": null,
+      "types": [
+        "Object"
+      ],
+      "spread": false,
+      "description": null
+    }
+  },
+  {
+    "__docId__": 7,
+    "kind": "method",
+    "name": "_createElement",
+    "memberof": "remote-device-logger/index.js~RemoteDeviceLogger",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "remote-device-logger/index.js~RemoteDeviceLogger#_createElement",
+    "access": "private",
+    "description": "Create an element node to contain logs for display",
+    "lineNumber": 109,
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "HTMLElement"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "parentElement",
+        "description": "The parent element of the log node"
+      },
+      {
+        "nullable": null,
+        "types": [
+          "boolean"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "display",
+        "description": "The initial state of the logs' appearance"
+      }
+    ],
+    "return": null
+  },
+  {
+    "__docId__": 8,
+    "kind": "member",
+    "name": "_element",
+    "memberof": "remote-device-logger/index.js~RemoteDeviceLogger",
+    "static": false,
+    "longname": "remote-device-logger/index.js~RemoteDeviceLogger#_element",
+    "access": "private",
+    "description": "The log container element",
+    "lineNumber": 127,
+    "type": {
+      "nullable": null,
+      "types": [
+        "HTMLElement"
+      ],
+      "spread": false,
+      "description": null
+    }
+  },
+  {
+    "__docId__": 9,
+    "kind": "method",
+    "name": "_catchAllErrors",
+    "memberof": "remote-device-logger/index.js~RemoteDeviceLogger",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "remote-device-logger/index.js~RemoteDeviceLogger#_catchAllErrors",
+    "access": "private",
+    "description": "Add an event lister to window to catch all errors happening on the browser",
+    "lineNumber": 138,
+    "params": [],
+    "return": null
+  },
+  {
+    "__docId__": 10,
+    "kind": "method",
+    "name": "log",
+    "memberof": "remote-device-logger/index.js~RemoteDeviceLogger",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "remote-device-logger/index.js~RemoteDeviceLogger#log",
+    "access": "public",
+    "description": "Log messages",
+    "lineNumber": 157,
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "...any"
+        ],
+        "spread": true,
+        "optional": false,
+        "name": "messages",
+        "description": "Log messages"
+      }
+    ],
+    "return": null
+  },
+  {
+    "__docId__": 11,
+    "kind": "method",
+    "name": "print",
+    "memberof": "remote-device-logger/index.js~RemoteDeviceLogger",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "remote-device-logger/index.js~RemoteDeviceLogger#print",
+    "access": "public",
+    "description": "Print messages",
+    "lineNumber": 172,
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "...any"
+        ],
+        "spread": true,
+        "optional": false,
+        "name": "messages",
+        "description": "Messages to print"
+      }
+    ],
+    "return": null
+  },
+  {
+    "__docId__": 12,
+    "kind": "method",
+    "name": "sendLog",
+    "memberof": "remote-device-logger/index.js~RemoteDeviceLogger",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "remote-device-logger/index.js~RemoteDeviceLogger#sendLog",
+    "access": "public",
+    "description": "Send log messages",
+    "lineNumber": 181,
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "string[]"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "messages",
+        "description": "Messages to send"
+      }
+    ],
+    "return": null
+  },
+  {
+    "__docId__": 13,
+    "kind": "method",
+    "name": "writeToElement",
+    "memberof": "remote-device-logger/index.js~RemoteDeviceLogger",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "remote-device-logger/index.js~RemoteDeviceLogger#writeToElement",
+    "access": "public",
+    "description": "Write log messages to the log container element",
+    "lineNumber": 192,
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "string[]"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "messages",
+        "description": "Messages to write"
+      }
+    ],
+    "return": null
+  },
+  {
+    "__docId__": 14,
+    "kind": "method",
+    "name": "toggle",
+    "memberof": "remote-device-logger/index.js~RemoteDeviceLogger",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "remote-device-logger/index.js~RemoteDeviceLogger#toggle",
+    "access": "public",
+    "description": "Toggle the log container element",
+    "lineNumber": 200,
+    "params": [],
+    "return": null
+  },
+  {
+    "__docId__": 15,
+    "kind": "method",
+    "name": "show",
+    "memberof": "remote-device-logger/index.js~RemoteDeviceLogger",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "remote-device-logger/index.js~RemoteDeviceLogger#show",
+    "access": "public",
+    "description": "Show the log container element",
+    "lineNumber": 212,
+    "params": [],
+    "return": null
+  },
+  {
+    "__docId__": 16,
+    "kind": "method",
+    "name": "hide",
+    "memberof": "remote-device-logger/index.js~RemoteDeviceLogger",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "remote-device-logger/index.js~RemoteDeviceLogger#hide",
+    "access": "public",
+    "description": "Hide the log container element",
+    "lineNumber": 221,
+    "params": [],
+    "return": null
+  },
+  {
+    "kind": "index",
+    "content": "# remote-device-logger\n\nA logging tool for a remote device equipped with no inspector to send a log to the receiver via WebSocket.\n\n![Remote Device Logger receiver screenshot](./assets/remote-device-logger-receiver-screenshot.png)\n![Remote Device Logger sender screenshot](./assets/remote-device-logger-screenshot.png)\n\nInstall\n---\n\n```sh\n$ npm i remote-device-logger --save-dev\n```\n\nUsage\n---\n\nStart the remote-device-logger cli on the server-side.  This is the log receiver.\n\n```sh\n$ remote-device-logger -p 8080\n```\n\nSend logs from the client-side.\n\n```js\nimport RDL from 'remote-device-logger';\n\nconst logger = new RDL({\n  element: document.body,\n  webSocketUrl: `ws://${ location.hostname }:8080`,\n});\n\n// log() method sends and displays logs.\nlogger.log('Client launched');\nlogger.log('This log message is sent by Remote Device Logger');\n\n// remote-device-logger catches errors, too.\nthrow new Error('Please catch this error');\n```\n\nYou will find logs on the client-side and the same logs in the standard output on the server-side.\n\n```sh\nLog receiver is listen on 8080\nClient says: {\"message\":\"Uncaught Error: Please catch this error\",\"fileName\":\"http://localhost:8000/example\",\"lineNumber\":17,\"columnNumber\":7,\"location\":\"http://localhost:8000/example\",\"userAgent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.90 Safari/537.36\"} This log message is sent by Remote Device Logger Client launched\nClient says: WebSocket opened\n```\n\nRun the example\n---\n\nStart the receiver\n\n```sh\n$ yarn receiver\n```\n\nStart the Web server\n\n```sh\n$ yarn example\n```\n\nThen, open `http://localhost:8000/example`\n",
+    "longname": "/Users/a12915/workspace/remote-device-logger/README.md",
+    "name": "./README.md",
+    "static": true,
+    "access": "public"
+  }
+]

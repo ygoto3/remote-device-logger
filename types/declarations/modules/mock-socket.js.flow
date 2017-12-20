@@ -1,0 +1,15 @@
+declare interface mockSocket$Connection {
+  on(eventName: 'message', callback: (message: string) => void): void;
+}
+
+declare interface mockSocket$Server {
+  constructor(url: string): mockSocket$Server;
+  on(eventName: 'connection', callback: (connection: mockSocket$Connection) => void): void;
+}
+
+declare module 'mock-socket' {
+  declare module.exports: {
+    WebSocket: Class<WebSocket>;
+    Server: Class<mockSocket$Server>;
+  }
+}

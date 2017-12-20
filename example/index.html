@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<title>Remote Device Logger</title>
+<h1 style="text-align: center;">Remote Device Logger</h1>
+<script type="module">
+
+import RDL from '/index.js';
+
+const logger = new RDL({
+  element: document.body,
+  webSocketUrl: `ws://${ location.hostname }:8080`,
+});
+
+logger.log('Client launched');
+logger.log('This log message is sent by Remote Device Logger');
+
+throw new Error('Please catch this error');
+
+</script>
